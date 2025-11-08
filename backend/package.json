@@ -1,0 +1,45 @@
+{
+  "name": "neuralpost-backend",
+  "version": "1.0.0",
+  "description": "NeuralPost - AI-Powered Multi-Tenant Blogging Platform Backend",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "lint": "eslint src/**/*.js",
+    "test": "jest --runInBand",
+    "migrate": "node migrations/run.js",
+    "seed": "node seed/seed.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "bullmq": "^5.1.1",
+    "cloudinary": "^2.0.1",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.3.2",
+    "jsonwebtoken": "^9.0.2",
+    "marked": "^11.1.0",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.11.3",
+    "rate-limit-redis": "^4.2.0",
+    "slugify": "^1.6.6",
+    "uuid": "^9.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
