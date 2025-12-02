@@ -1,0 +1,89 @@
+# render.yaml — Render Infrastructure as Code
+# Docs: https://render.com/docs/yaml-spec
+#
+# Services declared here:
+#   1. neuralpost-backend  — Node.js API (Docker)
+#   2. neuralpost-frontend — React SPA (Static Site)
+#   3. neuralpost-redis    — Redis (managed)
+#   + neuralpost-db        — PostgreSQL (managed, declared under `databases:`)
+#
+# Deploy a fresh environment:
+#   render blueprint launch
+# Or connect the repo at https://dashboard.render.com/new/blueprint
+
+services:
+  # ── Backend API ─────────────────────────────────────────────────────────────
+  - type: web
+    name: neuralpost-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /api/health
+    # Run migrations before each deploy (idempotent — skips already-applied files)
+    preDeployCommand: node migrations/run.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Render injects PORT automatically; app.js reads process.env.PORT
+      - key: DATABASE_URL
+        fromDatabase:
+          name: neuralpost-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: neuralpost-redis
+          type: redis
+          property: connectionString
+      # Set this to your actual frontend URL after first deploy
+      - key: FRONTEND_URL
+        value: https://neuralpost-frontend.onrender.com
+      # Auto-generated secrets — Render creates random values on first deploy
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      # Supply these manually in the Render dashboard after connecting the repo:
+      - key: HF_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GUARDIAN_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+
+  # ── Frontend (Static Site) ───────────────────────────────────────────────────
+  - type: web
+    name: neuralpost-frontend
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    # SPA routing — every path serves index.html; React Router handles the rest
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      # Cache built assets (content-hashed filenames) aggressively
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      # Baked in at build time by Vite — update to your actual backend URL
+      - key: VITE_API_URL
+        value: https://neuralpost-backend.onrender.com/api
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  - type: redis
+    name: neuralpost-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  - name: neuralpost-db
+    databaseName: neuralpost
+    user: neuralpost
+    plan: free
+    postgresMajorVersion: 16
