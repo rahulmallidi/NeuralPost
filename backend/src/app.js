@@ -14,6 +14,7 @@ import searchRoutes from './routes/search.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import blogRoutes from './routes/blog.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 validateEnv();
 
@@ -51,6 +52,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/blog', blogRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Global error handler
 app.use(errorHandler);

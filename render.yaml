@@ -51,6 +51,10 @@ services:
         sync: false
       - key: TAVILY_API_KEY
         sync: false
+      # Set a random string here, POST /api/admin/seed with header x-seed-secret: <value>.
+      # Delete this env var after seeding to permanently disable the endpoint.
+      - key: SEED_SECRET
+        sync: false
 
   # ── Frontend (Static Site) ───────────────────────────────────────────────────
   - type: web
