@@ -20,8 +20,9 @@ services:
     dockerContext: ./backend
     plan: free
     healthCheckPath: /api/health
-    # Run migrations before each deploy (idempotent — skips already-applied files)
-    preDeployCommand: node migrations/run.js
+    # preDeployCommand is paid-only — run migrations via startCommand instead.
+    # migrations/run.js is idempotent: skips files already recorded in schema_migrations.
+    startCommand: node migrations/run.js && node src/app.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -79,6 +80,8 @@ services:
     name: neuralpost-redis
     plan: free
     maxmemoryPolicy: allkeys-lru
+    # Empty list = accessible only within Render's private network (other services in this blueprint).
+    ipAllowList: []
 
 databases:
   # ── PostgreSQL ───────────────────────────────────────────────────────────────
