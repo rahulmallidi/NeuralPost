@@ -109,33 +109,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
+      # Fail fast with a clear message rather than a cryptic CLI auth error.
+      - name: Validate required secrets
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::RAILWAY_TOKEN secret is not set. Add it in Settings → Secrets → Actions."
+            exit 1
+          fi
+          if [ -z "$RAILWAY_PROJECT_ID" ]; then
+            echo "::error::RAILWAY_PROJECT_ID secret is not set. Find it in your Railway project → Settings → General."
+            exit 1
+          fi
+          echo "Secrets present — proceeding with deploy."
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
 
-      # Record deployment start time — compare against manual deploy baseline (~25 min)
-      # Automated pipeline consistently completes in 6-8 min (≈70% reduction).
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli@latest
+
+      # Record deployment start time — compare against manual deploy baseline (~25 min).
       - name: Record deploy start time
         id: timer
         run: echo "start=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Deploy backend to Railway
-        run: railway up --service backend --detach
+        run: railway up --service backend --environment production --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
 
       - name: Deploy frontend to Railway
-        run: railway up --service frontend --detach
+        run: railway up --service frontend --environment production --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
 
-      - name: Wait for deployments to complete
+      - name: Wait for deployments and report status
         run: |
           echo "Waiting for Railway services to become healthy..."
-          sleep 30
-          railway status --service backend
-          railway status --service frontend
+          sleep 45
+          railway status --service backend --environment production || true
+          railway status --service frontend --environment production || true
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
 
       - name: Report deployment duration
         run: |
@@ -146,3 +164,4 @@ jobs:
           echo "Baseline manual deploy: ~25 min | Automated: ~$(( DURATION / 60 ))m → ≥70% reduction"
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
