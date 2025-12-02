@@ -9,4 +9,6 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["node", "src/app.js"]
+# Run migrations (idempotent) then start the API server.
+# Using sh -c so the shell expands the && chain correctly.
+CMD ["sh", "-c", "node migrations/run.js && node src/app.js"]

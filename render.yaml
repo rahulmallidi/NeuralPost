@@ -20,9 +20,7 @@ services:
     dockerContext: ./backend
     plan: free
     healthCheckPath: /api/health
-    # preDeployCommand is paid-only — run migrations via startCommand instead.
-    # migrations/run.js is idempotent: skips files already recorded in schema_migrations.
-    startCommand: node migrations/run.js && node src/app.js
+    # Migrations run via CMD in the Dockerfile (idempotent — skips already-applied files).
     envVars:
       - key: NODE_ENV
         value: production
