@@ -72,7 +72,7 @@ router.post('/seed', async (req, res) => {
     return res.status(403).json({ error: 'Invalid seed secret.' });
   }
 
-  const client = await db.connect();
+  const client = await db.getClient();
   const log = [];
 
   try {
