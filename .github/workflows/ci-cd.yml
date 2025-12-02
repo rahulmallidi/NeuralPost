@@ -101,7 +101,7 @@ jobs:
         run: docker build ./frontend -t neuralpost-frontend:latest
 
   deploy:
-    name: Deploy to Railway
+    name: Deploy to Render
     runs-on: ubuntu-latest
     needs: [docker-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -109,61 +109,61 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Check secrets — skip gracefully if not yet configured, fail fast if partially set.
-      - name: Check Railway secrets
+      # Skip gracefully if deploy hooks haven't been added yet.
+      # Get them from Render dashboard → service → Settings → Deploy Hook.
+      - name: Check Render deploy hooks
         id: secrets_check
         run: |
-          if [ -z "$RAILWAY_TOKEN" ] && [ -z "$RAILWAY_PROJECT_ID" ]; then
-            echo "::warning::RAILWAY_TOKEN and RAILWAY_PROJECT_ID are not set. Skipping deploy."
+          if [ -z "$RENDER_BACKEND_DEPLOY_HOOK" ] && [ -z "$RENDER_FRONTEND_DEPLOY_HOOK" ]; then
+            echo "::warning::Render deploy hooks not set — skipping deploy. Add RENDER_BACKEND_DEPLOY_HOOK and RENDER_FRONTEND_DEPLOY_HOOK in Settings → Secrets → Actions."
             echo "skip=true" >> $GITHUB_OUTPUT
-          elif [ -z "$RAILWAY_TOKEN" ]; then
-            echo "::error::RAILWAY_TOKEN is missing. Add it in Settings → Secrets → Actions."
-            exit 1
-          elif [ -z "$RAILWAY_PROJECT_ID" ]; then
-            echo "::error::RAILWAY_PROJECT_ID is missing. Find it in Railway → project → Settings → General."
-            exit 1
           else
-            echo "Secrets present — proceeding with deploy."
+            echo "Deploy hooks present — proceeding."
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+          RENDER_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
 
-      - name: Install Railway CLI
-        if: steps.secrets_check.outputs.skip != 'true'
-        run: npm install -g @railway/cli@latest
-
-      # Record deployment start time — compare against manual deploy baseline (~25 min).
       - name: Record deploy start time
         id: timer
         if: steps.secrets_check.outputs.skip != 'true'
         run: echo "start=$(date +%s)" >> $GITHUB_OUTPUT
 
-      - name: Deploy backend to Railway
-        if: steps.secrets_check.outputs.skip != 'true'
-        run: railway up --service backend --environment production --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
-
-      - name: Deploy frontend to Railway
-        if: steps.secrets_check.outputs.skip != 'true'
-        run: railway up --service frontend --environment production --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
-
-      - name: Wait for deployments and report status
+      # Render deploy hooks are plain HTTPS webhooks — a POST triggers a new deploy.
+      - name: Trigger backend deploy
         if: steps.secrets_check.outputs.skip != 'true'
         run: |
-          echo "Waiting for Railway services to become healthy..."
-          sleep 45
-          railway status --service backend --environment production || true
-          railway status --service frontend --environment production || true
+          RESPONSE=$(curl -sf -X POST "$RENDER_BACKEND_DEPLOY_HOOK")
+          echo "Backend deploy triggered: $RESPONSE"
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+
+      - name: Trigger frontend deploy
+        if: steps.secrets_check.outputs.skip != 'true'
+        run: |
+          RESPONSE=$(curl -sf -X POST "$RENDER_FRONTEND_DEPLOY_HOOK")
+          echo "Frontend deploy triggered: $RESPONSE"
+        env:
+          RENDER_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+
+      # Poll the health endpoint until the new version is live (up to 5 min).
+      - name: Wait for backend to become healthy
+        if: steps.secrets_check.outputs.skip != 'true'
+        run: |
+          echo "Polling /api/health..."
+          for i in $(seq 1 30); do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" https://neuralpost-backend.onrender.com/api/health || echo "000")
+            echo "  attempt $i — HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Backend is healthy"
+              break
+            fi
+            sleep 10
+          done
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::Backend health check timed out — deploy may still be in progress"
+          fi
 
       - name: Report deployment duration
         if: steps.secrets_check.outputs.skip != 'true'
@@ -171,8 +171,4 @@ jobs:
           END=$(date +%s)
           START=${{ steps.timer.outputs.start }}
           DURATION=$(( END - START ))
-          echo "✅ Deployment completed in ${DURATION}s ($(( DURATION / 60 ))m $(( DURATION % 60 ))s)"
-          echo "Baseline manual deploy: ~25 min | Automated: ~$(( DURATION / 60 ))m → ≥70% reduction"
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          echo "✅ Deploy completed in ${DURATION}s ($(( DURATION / 60 ))m $(( DURATION % 60 ))s)"
