@@ -2,9 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import pg from 'pg';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '../.env' });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { Pool } = pg;
