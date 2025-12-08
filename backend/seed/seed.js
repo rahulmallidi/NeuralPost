@@ -1,11 +1,6 @@
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
 import slugify from 'slugify';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '../.env') });
 
 const { Pool } = pg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
