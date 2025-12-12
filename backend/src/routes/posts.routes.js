@@ -10,9 +10,9 @@ import { z } from 'zod';
 const router = express.Router();
 
 export const createPostSchema = z.object({
-  title: z.string().min(1).max(255),
+  title: z.string().min(1),
   content: z.string().min(1),
-  excerpt: z.string().max(500).optional(),
+  excerpt: z.string().optional(),
   coverImageUrl: z.string().url().optional(),
   status: z.enum(['draft', 'published']).default('draft'),
   tags: z.array(z.string()).max(10).default([]),

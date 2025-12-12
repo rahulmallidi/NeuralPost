@@ -1,11 +1,12 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { suggestTags as aiSuggestTags, generateExcerpt as aiGenerateExcerpt, writingAssist as aiWritingAssist } from '../services/aiService.js';
+import { suggestTags as aiSuggestTags, generateExcerpt as aiGenerateExcerpt, writingAssist as aiWritingAssist, generatePost as aiGeneratePost } from '../services/aiService.js';
+import { marked } from 'marked';
 import db from '../config/db.js';
 
 export const suggestTags = asyncHandler(async (req, res) => {
-  const { content } = req.body;
+  const { content, title = '' } = req.body;
   if (!content) return res.status(400).json({ error: 'Content is required' });
-  const tags = await aiSuggestTags(content);
+  const tags = await aiSuggestTags(title, content);
   res.json({ tags });
 });
 
@@ -21,6 +22,17 @@ export const writingAssist = asyncHandler(async (req, res) => {
   if (!text) return res.status(400).json({ error: 'Text is required' });
   const improved = await aiWritingAssist(text, instruction);
   res.json({ result: improved });
+});
+
+export const generatePost = asyncHandler(async (req, res) => {
+  const { topic, tone, length, wordCount } = req.body;
+  if (!topic?.trim()) return res.status(400).json({ error: 'Topic is required' });
+  const post = await aiGeneratePost(topic.trim(), tone, length, wordCount);
+  // Convert markdown content to HTML so TipTap renders it with correct formatting
+  if (post.content) {
+    post.content_html = marked(post.content);
+  }
+  res.json(post);
 });
 
 export const trendingTopics = asyncHandler(async (req, res) => {

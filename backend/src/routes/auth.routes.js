@@ -11,7 +11,7 @@ export const registerSchema = z.object({
   email: z.string().email(),
   username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
   password: z.string().min(8),
-  blogName: z.string().min(2).max(100).optional(),
+  blogName: z.preprocess(val => val === '' ? undefined : val, z.string().min(2).max(100).optional()),
 });
 
 export const loginSchema = z.object({

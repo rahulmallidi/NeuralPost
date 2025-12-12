@@ -25,6 +25,11 @@ export const listPosts = asyncHandler(async (req, res) => {
     LEFT JOIN post_tags pt ON p.id = pt.post_id
     LEFT JOIN tags t ON pt.tag_id = t.id
     WHERE p.status = $1
+      AND p.id IN (
+        SELECT DISTINCT ON (slug) id FROM posts
+        WHERE status = $1
+        ORDER BY slug, published_at DESC, id DESC
+      )
   `;
   const params = [status];
   let idx = 2;
@@ -41,7 +46,7 @@ export const listPosts = asyncHandler(async (req, res) => {
     params.push(author); idx++;
   }
 
-  query += ` GROUP BY p.id, u.id ORDER BY p.published_at DESC NULLS LAST LIMIT $${idx} OFFSET $${idx + 1}`;
+  query += ` GROUP BY p.id, u.id ORDER BY p.published_at DESC NULLS LAST, p.id DESC LIMIT $${idx} OFFSET $${idx + 1}`;
   params.push(limit, offset);
 
   const result = await db.query(query, params);
@@ -58,9 +63,14 @@ export const listPosts = asyncHandler(async (req, res) => {
   });
 });
 
+// UUID v4 pattern
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export const getPost = asyncHandler(async (req, res) => {
   const { slug } = req.params;
+  const isUUID = UUID_RE.test(slug);
 
+  const whereClause = isUUID ? 'p.id = $1' : 'p.slug = $1';
   const result = await db.query(`
     SELECT p.*, u.username, u.blog_name, u.blog_slug, u.avatar_url,
            COALESCE(json_agg(DISTINCT jsonb_build_object('name', t.name, 'slug', t.slug))
@@ -69,14 +79,11 @@ export const getPost = asyncHandler(async (req, res) => {
     JOIN users u ON p.user_id = u.id
     LEFT JOIN post_tags pt ON p.id = pt.post_id
     LEFT JOIN tags t ON pt.tag_id = t.id
-    WHERE p.slug = $1 AND (p.status = 'published' OR p.user_id = $2)
+    WHERE ${whereClause} AND (p.status = 'published' OR p.user_id = $2)
     GROUP BY p.id, u.id
   `, [slug, req.user?.id || null]);
 
   if (!result.rows[0]) return res.status(404).json({ error: 'Post not found' });
-
-  // Increment view count (fire and forget)
-  db.query('UPDATE posts SET view_count = view_count + 1 WHERE id = $1', [result.rows[0].id]);
 
   res.json(result.rows[0]);
 });
@@ -85,7 +92,8 @@ export const createPost = asyncHandler(async (req, res) => {
   const { title, content, excerpt, coverImageUrl, status, tags } = req.body;
 
   const slug = slugify(title, { lower: true, strict: true });
-  const contentHtml = marked(content);
+  const isHtml = content.trimStart().startsWith('<');
+  const contentHtml = isHtml ? content : marked(content);
   const readingTime = calcReadingTime(content);
 
   const result = await db.query(`
@@ -118,14 +126,16 @@ export const updatePost = asyncHandler(async (req, res) => {
   const existing = await db.query('SELECT * FROM posts WHERE id = $1 AND user_id = $2', [id, req.user.id]);
   if (!existing.rows[0]) return res.status(404).json({ error: 'Post not found or not authorized' });
 
-  const contentHtml = content ? marked(content) : existing.rows[0].content_html;
+  const isHtml = content?.trimStart().startsWith('<');
+  const contentHtml = content ? (isHtml ? content : marked(content)) : existing.rows[0].content_html;
   const readingTime = content ? calcReadingTime(content) : existing.rows[0].reading_time_mins;
   const slug = title ? slugify(title, { lower: true, strict: true }) : existing.rows[0].slug;
 
   const result = await db.query(`
     UPDATE posts SET title = COALESCE($1, title), slug = $2, content = COALESCE($3, content),
       content_html = $4, excerpt = COALESCE($5, excerpt), cover_image_url = COALESCE($6, cover_image_url),
-      status = COALESCE($7, status), reading_time_mins = $8, updated_at = NOW()
+      status = COALESCE($7, status), reading_time_mins = $8, updated_at = NOW(),
+      published_at = CASE WHEN $7 = 'published' AND published_at IS NULL THEN NOW() ELSE published_at END
     WHERE id = $9 AND user_id = $10 RETURNING *
   `, [title, slug, content, contentHtml, excerpt, coverImageUrl, status, readingTime, id, req.user.id]);
 
