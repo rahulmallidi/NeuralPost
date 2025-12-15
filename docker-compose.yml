@@ -39,7 +39,7 @@ services:
       DATABASE_URL: postgresql://neuralpost:secret@postgres:5432/neuralpost
       REDIS_URL: redis://redis:6379
       HF_API_KEY: ${HF_API_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       FRONTEND_URL: http://localhost:3000
