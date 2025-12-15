@@ -1,0 +1,41 @@
+# railway.toml
+# Declares the two Railway services and their build/start commands.
+# Reference: https://docs.railway.app/reference/config-as-code
+
+[build]
+# Root-level settings apply as defaults
+
+# ─── Backend service ────────────────────────────────────────────────────────
+[[services]]
+name = "backend"
+source = "backend"
+
+[services.build]
+buildCommand = "npm ci"
+dockerfilePath = "backend/Dockerfile"
+
+[services.deploy]
+startCommand = "node --env-file=/etc/secrets/.env src/app.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[services.variables]
+NODE_ENV = "production"
+
+# ─── Frontend service ────────────────────────────────────────────────────────
+[[services]]
+name = "frontend"
+source = "frontend"
+
+[services.build]
+buildCommand = "npm ci && npm run build"
+dockerfilePath = "frontend/Dockerfile"
+
+[services.deploy]
+startCommand = "nginx -g 'daemon off;'"
+healthcheckPath = "/"
+healthcheckTimeout = 20
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
