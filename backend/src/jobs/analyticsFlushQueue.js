@@ -22,12 +22,15 @@ export async function scheduleAnalyticsRefresh() {
   );
 }
 
-const worker = new Worker('analytics', async (job) => {
+// Skip worker in test environment — avoids open Redis handles in Jest
+const worker = process.env.NODE_ENV !== 'test' ? new Worker('analytics', async (job) => {
   if (job.name === 'refresh-summary') {
     await refreshAnalyticsSummary();
   }
-}, { connection: redisConnection });
+}, { connection: redisConnection }) : null;
 
-worker.on('failed', (job, err) => {
-  console.error(`Analytics job ${job?.id} failed:`, err.message);
-});
+if (worker) {
+  worker.on('failed', (job, err) => {
+    console.error(`Analytics job ${job?.id} failed:`, err.message);
+  });
+}
