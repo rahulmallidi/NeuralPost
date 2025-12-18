@@ -5,12 +5,16 @@
   "main": "src/app.js",
   "type": "module",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
+    "start": "node --env-file=../.env src/app.js",
+    "dev": "nodemon --exec \"node --env-file=../.env\" src/app.js",
     "lint": "eslint src/**/*.js",
-    "test": "jest --runInBand",
-    "migrate": "node migrations/run.js",
-    "seed": "node seed/seed.js"
+    "test": "node --experimental-vm-modules --env-file=../.env node_modules/jest/bin/jest.js --runInBand",
+    "migrate": "node --env-file=../.env migrations/run.js",
+    "seed": "node --env-file=../.env seed/seed.js",
+    "seed:bulk": "node --env-file=../.env seed/seed_bulk.js",
+    "seed:massive": "node --env-file=../.env seed/seed_massive.js",
+    "seed:analytics": "node --env-file=../.env seed/seed_analytics.js",
+    "benchmark": "node --env-file=../.env src/scripts/benchmark-search.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
