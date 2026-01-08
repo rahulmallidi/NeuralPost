@@ -17,9 +17,15 @@ function trackEvent(payload) {
   });
 
   if (navigator.sendBeacon) {
-    navigator.sendBeacon('/api/analytics/event', data);
+    // sendBeacon needs a Blob with explicit Content-Type so express.json() can parse it
+    navigator.sendBeacon('/api/analytics/event', new Blob([data], { type: 'application/json' }));
   } else {
-    fetch('/api/analytics/event', { method: 'POST', body: data, keepalive: true }).catch(() => {});
+    fetch('/api/analytics/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: data,
+      keepalive: true,
+    }).catch(() => {});
   }
 }
 

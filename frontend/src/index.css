@@ -3,69 +3,220 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --border: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+  *, *::before, *::after {
+    box-sizing: border-box;
   }
 
-  * {
-    @apply border-border;
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-ink text-cream font-sans antialiased;
+    min-height: 100vh;
+    font-feature-settings: 'ss01', 'ss02';
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f8fafc;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2563eb;
   }
 }
 
 @layer components {
+  /* ---- Prose (post reading) ---- */
   .prose {
-    @apply max-w-none text-gray-800 leading-relaxed;
+    @apply max-w-none text-cream leading-relaxed;
   }
 
   .prose h1, .prose h2, .prose h3 {
-    @apply font-bold text-gray-900 mt-8 mb-4;
+    @apply font-display text-cream mt-10 mb-4 leading-tight;
   }
 
-  .prose h1 { @apply text-3xl; }
-  .prose h2 { @apply text-2xl; }
-  .prose h3 { @apply text-xl; }
+  .prose h1 { @apply text-4xl font-black; }
+  .prose h2 {
+    @apply text-2xl font-bold;
+    border-bottom: 1px solid #c8d6ea;
+    padding-bottom: 0.5rem;
+  }
+  .prose h3 { @apply text-xl font-bold; }
 
-  .prose p { @apply mb-4; }
+  .prose p {
+    @apply mb-5 leading-8 text-[1.05rem];
+    color: #334155;
+  }
 
   .prose code {
-    @apply bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono;
+    @apply font-mono text-amber bg-ink-raised px-1.5 py-0.5 text-sm;
+    border: 1px solid #c8d6ea;
   }
 
   .prose pre {
-    @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4;
+    @apply bg-ink-soft p-5 overflow-x-auto mb-6 font-mono text-sm;
+    border-left: 3px solid #1a56db;
+    border-radius: 0;
   }
 
   .prose pre code {
-    @apply bg-transparent text-gray-100 p-0;
+    @apply bg-transparent text-cream/80 p-0 border-0;
   }
 
   .prose a {
-    @apply text-blue-600 hover:underline;
+    @apply text-amber underline underline-offset-2 hover:text-amber-light transition-colors;
   }
 
   .prose ul, .prose ol {
-    @apply pl-6 mb-4;
+    @apply pl-6 mb-5 space-y-1.5;
+    color: #334155;
   }
 
   .prose ul { @apply list-disc; }
   .prose ol { @apply list-decimal; }
 
+  .prose li { @apply leading-7; }
+
   .prose blockquote {
-    @apply border-l-4 border-blue-400 pl-4 italic text-gray-600 mb-4;
+    @apply border-l-4 border-amber pl-6 italic my-6;
+    color: #4a5a7a;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+
+  .prose strong { @apply text-cream font-semibold; }
+
+  .prose hr {
+    @apply border-ink-border my-8;
+  }
+
+  /* ---- Tiptap editor ---- */
+  .ProseMirror {
+    @apply text-cream/90 leading-8 outline-none;
+    font-size: 1.05rem;
+  }
+
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    @apply text-cream-faint/40 pointer-events-none float-left h-0;
+  }
+
+  .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+    @apply font-display font-bold text-cream mt-8 mb-3;
+  }
+
+  .ProseMirror h1 { @apply text-3xl; }
+  .ProseMirror h2 { @apply text-2xl; }
+  .ProseMirror h3 { @apply text-xl; }
+
+  .ProseMirror code {
+    @apply font-mono text-amber bg-ink-raised px-1.5 py-0.5 text-sm;
+    border: 1px solid #c8d6ea;
+  }
+
+  .ProseMirror pre {
+    @apply bg-ink-soft font-mono text-sm p-4 my-4;
+    border-left: 3px solid #1a56db;
+  }
+
+  .ProseMirror blockquote {
+    @apply border-l-4 border-amber pl-5 italic my-6 text-cream-muted;
+  }
+
+  .ProseMirror ul { @apply list-disc pl-6 mb-4 space-y-1; }
+  .ProseMirror ol { @apply list-decimal pl-6 mb-4 space-y-1; }
+  .ProseMirror p { @apply mb-4; }
+  .ProseMirror img { @apply max-w-full rounded border border-ink-border my-4; }
+  .ProseMirror img.ProseMirror-selectednode { @apply ring-2 ring-amber; }
+  .ProseMirror strong { @apply font-bold text-cream; }
+  .ProseMirror em { @apply italic text-cream/90; }
+  .ProseMirror s { @apply line-through text-cream-muted; }
+  .ProseMirror a { @apply text-amber underline underline-offset-2 hover:text-amber-light; }
+  .ProseMirror hr { @apply border-0 border-t border-ink-border my-6; }
+
+  /* ---- Post body prose ---- */
+  .prose { @apply text-cream/90 leading-8; font-size: 1.0625rem; }
+  .prose * { max-width: 100%; }
+  .prose p { @apply mb-5; }
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    @apply font-display font-bold text-cream mt-10 mb-4 leading-tight;
+  }
+  .prose h1 { @apply text-3xl; }
+  .prose h2 { @apply text-2xl border-b border-ink-border pb-2; }
+  .prose h3 { @apply text-xl; }
+  .prose h4 { @apply text-lg; }
+  .prose a { @apply text-amber underline underline-offset-2 hover:text-amber-light transition-colors; }
+  .prose strong, .prose b { @apply font-semibold text-cream; }
+  .prose em, .prose i { @apply italic; }
+  .prose ul { @apply list-disc pl-7 my-5 space-y-1.5; }
+  .prose ol { @apply list-decimal pl-7 my-5 space-y-1.5; }
+  .prose li { @apply text-cream/90; }
+  .prose li > ul, .prose li > ol { @apply mt-1.5 mb-0; }
+  .prose blockquote { @apply border-l-4 border-amber pl-6 italic my-7 text-cream-muted; }
+  .prose blockquote p { @apply mb-0; }
+  .prose code {
+    @apply font-mono text-amber bg-ink-raised px-1.5 py-0.5 text-sm;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .prose pre {
+    @apply bg-ink-soft font-mono text-sm p-5 my-6 overflow-x-auto;
+    border-left: 3px solid #1a56db;
+  }
+  .prose pre code { @apply bg-transparent border-0 p-0 text-cream/90; }
+  .prose img { @apply max-w-full my-8 mx-auto block border border-ink-border; }
+  .prose hr { @apply border-ink-border my-10; }
+  .prose table { @apply w-full text-sm my-6 border-collapse; }
+  .prose th {
+    @apply font-mono text-[10px] tracking-widest uppercase text-cream-muted border border-ink-border px-4 py-2 bg-ink-soft text-left;
+  }
+  .prose td { @apply border border-ink-border px-4 py-2 text-cream/80; }
+
+  /* ---- Tag pill ---- */
+  .tag-pill {
+    @apply font-sans text-xs font-medium px-2.5 py-0.5 rounded-full border border-ink-border text-cream-muted bg-ink-soft hover:border-amber hover:text-amber hover:bg-blue-50 transition-colors cursor-default;
+  }
+
+  /* ---- Reusable input ---- */
+  .input-field {
+    @apply w-full bg-white border border-ink-border text-cream px-4 py-2.5 text-sm rounded-lg placeholder-cream-faint/60 focus:outline-none focus:border-amber focus:ring-2 transition-all;
+    --tw-ring-color: rgba(37, 99, 235, 0.12);
+  }
+
+  /* ---- Reusable button variants ---- */
+  .btn-primary {
+    @apply bg-amber text-white font-semibold px-5 py-2.5 text-sm rounded-lg hover:bg-amber-dark active:scale-[0.98] transition-all shadow-sm disabled:opacity-40 flex items-center justify-center gap-2;
+  }
+  .btn-primary:hover {
+    box-shadow: 0 4px 12px 0 rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.06);
+  }
+
+  .btn-ghost {
+    @apply border border-ink-border text-cream-muted px-5 py-2.5 text-sm font-medium rounded-lg hover:border-slate-400 hover:text-cream hover:bg-ink-soft active:scale-[0.98] transition-all flex items-center justify-center gap-2;
+  }
+
+  /* ---- Stat card ---- */
+  .stat-card {
+    @apply bg-white border border-ink-border p-5 rounded-xl;
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.07), 0 1px 2px -1px rgba(0,0,0,0.07);
   }
 }
