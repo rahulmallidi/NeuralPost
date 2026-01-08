@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
-import { Search, PenSquare, LayoutDashboard, LogOut, Menu, X, Cpu } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';import { useAuthStore } from '../store/authStore';
+import { useQueryClient } from '@tanstack/react-query';
+import { Search, PenSquare, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -15,96 +16,136 @@ export default function Navbar() {
       await api.post('/auth/logout');
     } catch {}
     logout();
+    queryClient.clear(); // wipe all cached data so next user sees only their own
     navigate('/');
     toast.success('Logged out');
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-ink-border shadow-sm">
+      <nav className="max-w-6xl mx-auto px-5 sm:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-gray-900">
-            <Cpu className="text-blue-600 w-6 h-6" />
+
+          {/* Masthead */}
+          <Link
+            to="/"
+            className="font-display font-bold text-xl text-cream tracking-tight hover:text-amber transition-colors"
+          >
             NeuralPost
           </Link>
 
-          {/* Center links */}
+          {/* Center */}
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/" className="text-gray-600 hover:text-gray-900 transition-colors text-sm">Home</Link>
-            <Link to="/explore" className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors text-sm">
-              <Search className="w-4 h-4" />
+            <Link
+              to="/"
+              className="text-sm font-medium text-cream-muted hover:text-cream transition-colors"
+            >
+              Home
+            </Link>
+            <Link
+              to="/explore"
+              className="text-sm font-medium text-cream-muted hover:text-cream transition-colors flex items-center gap-1.5"
+            >
+              <Search className="w-3.5 h-3.5" />
               Explore
             </Link>
           </div>
 
-          {/* Right side */}
+          {/* Right */}
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
               <>
                 <Link
                   to="/dashboard/editor"
-                  className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                  className="btn-primary text-sm"
                 >
                   <PenSquare className="w-4 h-4" />
                   Write
                 </Link>
                 <Link
                   to="/dashboard"
-                  className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg text-sm transition-colors"
+                  className="btn-ghost text-sm"
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   Dashboard
                 </Link>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pl-3 border-l border-ink-border ml-1">
                   {user?.avatar_url ? (
-                    <img src={user.avatar_url} alt={user.username} className="w-8 h-8 rounded-full" />
+                    <img src={user.avatar_url} alt={user.username} className="w-8 h-8 rounded-full ring-2 ring-ink-border" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-semibold">
+                    <div className="w-8 h-8 bg-amber text-white flex items-center justify-center text-xs font-bold rounded-full">
                       {user?.username?.[0]?.toUpperCase()}
                     </div>
                   )}
-                  <button onClick={handleLogout} className="text-gray-400 hover:text-gray-700">
+                  <button
+                    onClick={handleLogout}
+                    className="text-cream-faint hover:text-ember transition-colors"
+                    title="Log out"
+                  >
                     <LogOut className="w-4 h-4" />
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-gray-600 hover:text-gray-900 text-sm">Log in</Link>
-                <Link to="/register" className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                <Link
+                  to="/login"
+                  className="text-sm font-medium text-cream-muted hover:text-cream transition-colors"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn-primary text-sm"
+                >
                   Get Started
                 </Link>
               </>
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
+          {/* Mobile toggle */}
+          <button
+            className="md:hidden text-cream-muted hover:text-cream transition-colors"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden py-3 border-t border-gray-100 space-y-2">
-            <Link to="/" className="block text-gray-700 py-2">Home</Link>
-            <Link to="/explore" className="block text-gray-700 py-2">Explore</Link>
+          <div className="md:hidden border-t border-ink-border py-4 space-y-1 animate-fade-up">
+            <Link to="/" onClick={() => setMenuOpen(false)}
+              className="block text-sm font-medium py-2.5 px-2 rounded-lg text-cream-muted hover:text-cream hover:bg-ink-soft transition-colors">
+              Home
+            </Link>
+            <Link to="/explore" onClick={() => setMenuOpen(false)}
+              className="block text-sm font-medium py-2.5 px-2 rounded-lg text-cream-muted hover:text-cream hover:bg-ink-soft transition-colors">
+              Explore
+            </Link>
             {isAuthenticated ? (
               <>
-                <Link to="/dashboard" className="block text-gray-700 py-2">Dashboard</Link>
-                <Link to="/dashboard/editor" className="block text-gray-700 py-2">Write</Link>
-                <button onClick={handleLogout} className="block text-red-600 py-2">Logout</button>
+                <Link to="/dashboard" onClick={() => setMenuOpen(false)}
+                  className="block text-sm font-medium py-2.5 px-2 rounded-lg text-cream-muted hover:bg-ink-soft transition-colors">Dashboard</Link>
+                <Link to="/dashboard/editor" onClick={() => setMenuOpen(false)}
+                  className="block text-sm font-medium py-2.5 px-2 rounded-lg text-amber hover:bg-blue-50 transition-colors">Write</Link>
+                <button onClick={() => { setMenuOpen(false); handleLogout(); }}
+                  className="block w-full text-left text-sm font-medium py-2.5 px-2 rounded-lg text-ember hover:bg-red-50 transition-colors">
+                  Log out
+                </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="block text-gray-700 py-2">Log in</Link>
-                <Link to="/register" className="block text-gray-700 py-2">Register</Link>
+                <Link to="/login" onClick={() => setMenuOpen(false)}
+                  className="block text-sm font-medium py-2.5 px-2 rounded-lg text-cream-muted hover:bg-ink-soft transition-colors">Log in</Link>
+                <Link to="/register" onClick={() => setMenuOpen(false)}
+                  className="block text-sm font-medium py-2.5 px-2 rounded-lg text-amber hover:bg-blue-50 transition-colors">Get Started</Link>
               </>
             )}
           </div>
         )}
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
 }

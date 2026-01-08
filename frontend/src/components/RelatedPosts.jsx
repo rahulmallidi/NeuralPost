@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
-import { Cpu } from 'lucide-react';
 
 export default function RelatedPosts({ postId }) {
   const { data = [] } = useQuery({
@@ -13,26 +12,28 @@ export default function RelatedPosts({ postId }) {
   if (!data.length) return null;
 
   return (
-    <div className="mt-12 pt-8 border-t border-gray-100">
-      <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-        <Cpu className="w-5 h-5 text-blue-500" />
-        You might also like
-      </h2>
-      <div className="grid grid-cols-2 gap-4">
-        {data.map(post => (
+    <div>
+      <div className="flex items-baseline gap-3 mb-6 border-b border-amber pb-3">
+        <h2 className="font-display font-bold text-xl text-cream">Further Reading</h2>
+        <span className="text-xs text-cream-faint">
+          Semantically similar
+        </span>
+      </div>
+      <div className="grid md:grid-cols-2 gap-0 md:divide-x md:divide-ink-border">
+        {data.map((post, i) => (
           <Link
             key={post.id}
             to={post.blog_slug ? `/blog/${post.blog_slug}/${post.slug}` : `/posts/${post.slug}`}
-            className="group bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow"
+            className={`group block py-4 hover:bg-ink-soft transition-colors ${i % 2 === 1 ? 'md:pl-8' : ''}`}
           >
-            <p className="font-medium text-gray-900 text-sm mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
+            <p className="font-display font-bold text-cream text-base leading-snug mb-1 group-hover:text-amber transition-colors line-clamp-2">
               {post.title}
             </p>
             {post.excerpt && (
-              <p className="text-xs text-gray-400 line-clamp-1">{post.excerpt}</p>
+              <p className="text-cream-faint text-xs leading-relaxed line-clamp-1">{post.excerpt}</p>
             )}
             {post.similarity_score != null && (
-              <p className="text-xs text-purple-500 font-medium mt-1">
+              <p className="text-xs font-medium text-amber mt-2">
                 {(post.similarity_score * 100).toFixed(0)}% similar
               </p>
             )}
