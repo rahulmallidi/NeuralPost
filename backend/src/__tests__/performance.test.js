@@ -358,9 +358,9 @@ describe('Claim: CI/CD pipeline (GitHub Actions — 70% deployment time reductio
     expect(content).toMatch(/npm test/);
   });
 
-  it('workflow includes deploy step (Railway)', async () => {
+  it('workflow includes deploy step (Render)', async () => {
     const { readFileSync } = await import('fs');
     const content = readFileSync(WORKFLOW_PATH, 'utf8');
-    expect(content).toMatch(/[Rr]ailway/);
+    expect(content).toMatch(/[Rr]ender/);
   });
 });

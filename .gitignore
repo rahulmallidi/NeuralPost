@@ -8,12 +8,15 @@ dist/
 build/
 .next/
 
-# Environment variables
+# Environment variables — NEVER commit real keys
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
+*.env
 
 # Logs
 logs/
@@ -22,6 +25,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+
+# Test output files
+test-results.md
+test-results.txt
+test-results/
+jest-results.json
 
 # Runtime
 pids
@@ -43,9 +52,6 @@ coverage/
 ehthumbs.db
 Thumbs.db
 
-# Docker
-.dockerignore
-
 # IDE
 .idea/
 .vscode/
@@ -56,3 +62,6 @@ Thumbs.db
 .cache/
 .temp/
 tmp/
+
+# Project planning / internal notes (not for the repo)
+project.md
